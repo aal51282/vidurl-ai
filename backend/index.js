@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY);
+
 const app = express();
 app.use(cors());
 
