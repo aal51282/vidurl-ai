@@ -3,11 +3,16 @@ import uniqid from "uniqid";
 import fs from "fs";
 import cors from "cors";
 import { GPTScript, RunEventType } from "@gptscript-ai/gptscript";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
 
-const g = new GPTScript();
+const g = new GPTScript({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 app.get("/test", (req, res) => {
   return res.json("test ok");
@@ -22,28 +27,28 @@ app.get("/create-story", async (req, res) => {
   console.log({ url });
 
   const opts = {
-    input: `--url ${url} --dir ${dir}`,
+    input: `--url ${url} --dir ${path}`,
     disableCache: true,
   };
 
   try {
-    console.log("about to run story.gpt");
     const run = await g.run("./story.gpt", opts);
-    console.log("awaiting result");
-    run.on(RunEventType.Event, (ev) => {
+
+    run.on(RunEventType.Event, ev => {
       if (ev.type === RunEventType.CallFinish && ev.output) {
         console.log(ev.output);
       }
     });
-  const result = await run.text();
-
-    return res.json(result);
+    const result = await run.text();
+    return res.json({ success: true, result });
   } catch (e) {
-    console.log("error", e);
-    return res.status(500).json(e);
+    console.error("Error in /create-story:", e.message);
+    return res.status(500).json({ 
+      success: false, 
+      error: "Failed to create story", 
+      details: e.message 
+    });
   }
 });
 
-app.listen(8080, () => {
-  console.log("Server is running on port 8080");
-});
+app.listen(8080, () => console.log("Listening on port 8080"));
